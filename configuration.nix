@@ -3,16 +3,14 @@
 {
   imports = [ ./hardware-configuration.nix ];
 
-  # Bootloader
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Hostname
-  networking.hostName = "marco-nixos";
+  networking.hostName = "$USER-nixos";
   networking.networkmanager.enable = true;
 
-  # Timezone e locale
   time.timeZone = "Europe/Rome";
+
   i18n.defaultLocale = "it_IT.UTF-8";
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "it_IT.UTF-8";
@@ -26,21 +24,20 @@
     LC_TIME = "it_IT.UTF-8";
   };
 
-  # Desktop Environment
+  # === SERVICES ===
   services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-  
-  # Layout tastiera IT + EN con switch Alt+Shift
+  services.displayManager.sddm.enable = true;
+  services.desktopManager.plasma6.enable = true;
+
   services.xserver.xkb = {
     layout = "it,us";
-    variant = "";
     options = "grp:alt_shift_toggle";
   };
   console.keyMap = "it";
 
-  # Audio
-  hardware.pulseaudio.enable = false;
+  services.printing.enable = true;
+
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -49,76 +46,80 @@
     pulse.enable = true;
   };
 
-  # User account
-  users.users.marco = {
-    isNormalUser = true;
-    description = "Marco Perini";
-    extraGroups = [ "networkmanager" "wheel" "docker" "libvirtd" "vboxusers" ];
-  };
-
-  # System packages
-  environment.systemPackages = with pkgs; [
-    # Browser
-    brave
-    google-chrome
-    firefox
-
-    # Editor / IDE
-    vscode
-    neovim
-    vim
-
-    # Dev tools
-    git
-    python313
-    wget
-    curl
-    gnupg
-    jdk21
-
-    # Communication
-    telegram-desktop
-    discord
-    thunderbird
-    session-desktop
-
-    # Media
-    vlc
-    obs-studio
-
-    # Utilities
-    balenaetcher
-    qbittorrent
-    _7zz
-    unrar
-    htop
-    btop
-
-    # System
-    gparted
-    
-    # Virtualizzazione
-    virtualbox
-  ];
-
-  # Flatpak
+  services.blueman.enable = true;
   services.flatpak.enable = true;
 
-  # Docker
-  virtualisation.docker.enable = true;
 
-  # VirtualBox
-  virtualisation.virtualbox.host.enable = true;
+  # === HARDWARE ===
+  hardware.bluetooth.enable = true;
 
-  # Steam
-  programs.steam = {
+  hardware.graphics = {
     enable = true;
-    remotePlay.openFirewall = true;
-    dedicatedServer.openFirewall = true;
   };
 
-  # Firewall
-  networking.firewall.enable = true;
+  services.xserver.videoDrivers = [ "nvidia" ];
 
-  system.stateVersion = "25.05";
+  hardware.nvidia = {
+    modesetting.enable = true;
+    open = false;
+    nvidiaSettings = true;
+  };
+
+
+
+  # === CONFIG ===
+  xdg.portal.enable = true;
+
+
+
+  nixpkgs.config.allowUnfree = true;
+
+  environment.systemPackages = with pkgs; [
+    # Base tools
+    neovim
+    git
+    wget
+    curl
+    tree
+    htop
+    nettools
+    bind
+
+    # Browsers
+    firefox
+    brave
+    google-chrome
+
+    # Messaging
+    # telegram-desktop
+    # whatsie
+
+    # Email
+    thunderbird
+
+    # Editors
+    notepad-next
+
+    # Dev
+    python3
+
+    # Streaming
+    # stremio
+
+    # Work
+    teamviewer
+    teams-for-linux
+    virtualboxWithExtpack
+  ];
+
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  users.users.$USER = {
+    isNormalUser = true;
+    extraGroups = [ "networkmanager" "wheel" "bluetooth" ];
+  };
+
+
+  system.stateVersion = "25.11";
 }
