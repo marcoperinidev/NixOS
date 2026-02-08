@@ -43,6 +43,10 @@
 
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
+  security.sudo.extraConfig = ''
+    Defaults !sudoedit_checkdir
+    Defaults lecture = never
+  '';
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -51,11 +55,7 @@
   };
 
   services.blueman.enable = true;
-
-  # Flatpak FULL: repo + xdg-desktop-portal
   services.flatpak.enable = true;
-
-  # TeamViewer: enable daemon service
   services.teamviewer.enable = true;
 
   # === HARDWARE ===
@@ -73,22 +73,61 @@
     open = false;
     nvidiaSettings = true;
   };
+
   programs.appimage = {
     enable = true;
     binfmt = true;
   };
 
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.permittedInsecurePackages = [
-    "qtwebkit-5.212.0-alpha4"
-    "qtwebengine-5.15.19"
+  nixpkgs.config.permittedInsecurePackages = false;
+
+  # === EDITOR ===
+  environment.variables = {
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+  };
+
+  # === ZSH ===
+  programs.zsh = {
+    enable = true;
+    enableCompletion = true;
+    autosuggestions.enable = true;
+    syntaxHighlighting.enable = true;
+
+    shellInit = ''
+      HISTFILE="$HOME/.zsh_history"
+      export EDITOR="nvim"
+      export VISUAL="nvim"
+    '';
+
+    interactiveShellInit = ''
+      # Case insensitive tab completion
+      zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+      zstyle ':completion:*' menu select
+      
+      # History search con frecce
+      bindkey '^[[A' history-search-backward
+      bindkey '^[[B' history-search-forward
+    '';
+
+    histSize = 10000;
+  };
+
+  # === FONTS ===
+  fonts.packages = with pkgs; [
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
+    nerd-fonts.hack
   ];
 
-  # === CONFIG ===
-
+  # === PACKAGES ===
   environment.systemPackages = with pkgs; [
     # Base tools
     neovim
+    p7zip
+    unzip
+    unrar
     git
     wget
     curl
@@ -105,22 +144,26 @@
     appimage-run
     kdePackages.plasma-browser-integration
 
-    # === Neovim ===
+    # Neovim deps
     wl-clipboard
-
-    # search and navigation
     ripgrep
     fd
     fzf
 
-    # LSP and format
+    # LSP and formatters
+    nodePackages.prettier
+    prettier
+    vscode-json-languageserver
     nil
     nixd
+    nixfmt-classic
+    yamlfmt
     lua-language-server
     javascript-typescript-langserver
     bashdb
     bash-language-server
     stylua
+    shfmt
     pyright
     ruff
 
@@ -128,7 +171,7 @@
     gcc
     gnumake
 
-    # extras
+    # Extras
     lazygit
     tree-sitter
     vimPlugins.nvim-treesitter-parsers.bash
@@ -146,7 +189,6 @@
     thunderbird
 
     # Messaging
-    #beeper -- una vera merda-privacy problems
     ferdium
 
     # Editors
@@ -156,36 +198,30 @@
     python3
     nodejs_22
     cargo
-    pkgs.libx11
-    pkgs.libxcb
-    pkgs.libxcb-util
+    libx11
+    libxcb
+    libxcb-util
     makeself
     qmake2cmake
     javaPackages.compiler.temurin-bin.jre-21
     javaPackages.compiler.temurin-bin.jdk-21
     bash-completion
-    pkgs.libsForQt5.qt5.qtbase
-    pkgs.kdePackages.qtbase
+    libsForQt5.qt5.qtbase
+    kdePackages.qtbase
 
     # Work
     teamviewer
-    teams-for-linux
+    #teams-for-linux
     virtualboxWithExtpack
   ];
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.trusted-users = [ "root" "$USER" ];
 
   users.users.$USER = {
     isNormalUser = true;
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "bluetooth"
-      "flatpak"
-    ];
+    extraGroups = [ "networkmanager" "wheel" "bluetooth" "flatpak" ];
+    shell = pkgs.zsh;
   };
 
   system.stateVersion = "25.11";
